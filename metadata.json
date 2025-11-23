@@ -1,0 +1,5 @@
+{
+  "name": "Chess V4 Remastered",
+  "description": "A modern, bug-fixed version of the classic chess browser game using React, TypeScript, and Tailwind CSS.",
+  "requestFramePermissions": []
+}

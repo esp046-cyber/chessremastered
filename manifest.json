@@ -1,0 +1,22 @@
+
+{
+  "short_name": "Chess V4",
+  "name": "Chess V4 Remastered",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBmaWxsPSIjYmFjYTQ0IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMjAiPjxwYXRoIGQ9Ik0yNTYgNjRjLTQ0LjIgMC04MCAzNS44LTgwIDgwczM1LjggODAgODAgODAgODAtMzUuOCA4MC04MC0zNS44LTgwLTgwLTgwem0wIDE4MmMtNTYuNiAwLTEwNS40IDM0LjYtMTI3LjggODUuMmwtMTYuNCAzNy44aDI4OC40bC0xNi40LTM3LjhDMzYxLjQgMjgwLjYgMzEyLjYgMjQ2IDI1NiAyNDZ6TTg4IDQ0OHYzaDMzNnYtM0g4OHoiLz48L3N2Zz4=",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBmaWxsPSIjYmFjYTQ0IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMjAiPjxwYXRoIGQ9Ik0yNTYgNjRjLTQ0LjIgMC04MCAzNS44LTgwIDgwczM1LjggODAgODAgODAgODAtMzUuOCA4MC04MC0zNS44LTgwLTgwLTgwem0wIDE4MmMtNTYuNiAwLTEwNS40IDM0LjYtMTI3LjggODUuMmwtMTYuNCAzNy44aDI4OC40bC0xNi40LTM3LjhDMzYxLjQgMjgwLjYgMzEyLjYgMjQ2IDI1NiAyNDZ6TTg4IDQ0OHYzaDMzNnYtM0g4OHoiLz48L3N2Zz4=",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#262522",
+  "background_color": "#262522",
+  "orientation": "portrait"
+}

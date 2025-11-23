@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#262522" />
+    <meta name="description" content="A modern, bug-fixed version of the classic chess browser game." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Chess V4 Remastered</title>
+    <link rel="manifest" href="./manifest.json" />
+    <!-- Embedded Base64 Icon (Stylized Pawn) -->
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBmaWxsPSIjYmFjYTQ0IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMjAiPjxwYXRoIGQ9Ik0yNTYgNjRjLTQ0LjIgMC04MCAzNS44LTgwIDgwczM1LjggODAgODAgODAgODAtMzUuOCA4MC04MC0zNS44LTgwLTgwLTgwem0wIDE4MmMtNTYuNiAwLTEwNS40IDM0LjYtMTI3LjggODUuMmwtMTYuNCAzNy44aDI4OC40bC0xNi40LTM3LjhDMzYxLjQgMjgwLjYgMzEyLjYgMjQ2IDI1NiAyNDZ6TTg4IDQ0OHYzaDMzNnYtM0g4OHoiLz48L3N2Zz4=" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBmaWxsPSIjYmFjYTQ0IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMjAiPjxwYXRoIGQ9Ik0yNTYgNjRjLTQ0LjIgMC04MCAzNS44LTgwIDgwczM1LjggODAgODAgODAgODAtMzUuOCA4MC04MC0zNS44LTgwLTgwLTgwem0wIDE4MmMtNTYuNiAwLTEwNS40IDM0LjYtMTI3LjggODUuMmwtMTYuNCAzNy44aDI4OC40bC0xNi40LTM3LjhDMzYxLjQgMjgwLjYgMzEyLjYgMjQ2IDI1NiAyNDZ6TTg4IDQ0OHYzaDMzNnYtM0g4OHoiLz48L3N2Zz4=" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Global tweaks */
+      body {
+        background-color: #262522;
+        color: #bababa;
+        /* Allow scrolling but prevent bounce effects where possible */
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+        /* Respect iOS Safe Areas (Notch / Home Bar) */
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
+      /* Ensure Unicode chess pieces use a font that supports them well */
+      .font-chess {
+        font-family: "Segoe UI Symbol", "Apple Symbols", "DejaVu Sans", "Symbola", serif;
+      }
+      /* Animations */
+      @keyframes popIn {
+        0% { transform: scale(0.5); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      @keyframes captureDisappear {
+        0% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(1.4); opacity: 0; }
+      }
+      .animate-pop { 
+        animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
+      }
+      .animate-capture-disappear { 
+        animation: captureDisappear 0.4s ease-out forwards; 
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registered'))
+            .catch(err => console.log('Service Worker failed', err));
+        });
+      }
+    </script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
