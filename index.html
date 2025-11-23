@@ -15,17 +15,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       /* Global tweaks */
-      body {
+      html, body {
+        height: 100%;
+        width: 100%;
         background-color: #262522;
         color: #bababa;
-        /* Allow scrolling but prevent bounce effects where possible */
-        overscroll-behavior-y: none;
+        /* Strictly prevent page scrolling */
+        overflow: hidden;
+        overscroll-behavior: none;
         -webkit-tap-highlight-color: transparent;
-        /* Respect iOS Safe Areas (Notch / Home Bar) */
+      }
+      
+      /* Respect iOS Safe Areas (Notch / Home Bar) */
+      body {
         padding-bottom: env(safe-area-inset-bottom);
         padding-left: env(safe-area-inset-left);
         padding-right: env(safe-area-inset-right);
       }
+
       /* Ensure Unicode chess pieces use a font that supports them well */
       .font-chess {
         font-family: "Segoe UI Symbol", "Apple Symbols", "DejaVu Sans", "Symbola", serif;
@@ -58,7 +65,7 @@
 <link rel="stylesheet" href="/index.css">
 </head>
   <body>
-    <div id="root"></div>
+    <div id="root" style="height: 100%"></div>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {

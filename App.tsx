@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState, MoveRecord, PieceType, Position, GameMode, Move, Piece } from './types';
 import { getInitialBoard, applyMove, getBestMove, getValidMoves, getSan, getAllMoves, isInCheck } from './services/chessEngine';
 import { playSound, startAudioEngine } from './services/audioService';
@@ -18,7 +17,8 @@ const App: React.FC = () => {
   // Initialize Game Mode from Local Storage or default to AI
   const getSavedMode = (): GameMode => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('chess.gameMode') as GameMode) || 'AI';
+      const saved = localStorage.getItem('chess.gameMode');
+      return (saved as GameMode) || 'AI';
     }
     return 'AI';
   };
@@ -30,7 +30,7 @@ const App: React.FC = () => {
     validMoves: [],
     lastMove: null,
     lastCapture: null,
-    lastCapturedPiece: null, // Initialize
+    lastCapturedPiece: null,
     history: [],
     timers: { white: 600, black: 600 },
     gameOver: false,
@@ -55,7 +55,6 @@ const App: React.FC = () => {
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [audioUnlocked, setAudioUnlocked] = useState<boolean>(false);
   const [notification, setNotification] = useState<string | null>(null);
-  const historyEndRef = useRef<HTMLDivElement>(null);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -293,10 +292,6 @@ const App: React.FC = () => {
     }
   }, [gameState.board, gameState.turn, gameState.gameOver, gameState.gameMode]);
 
-  useEffect(() => {
-    historyEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [gameState.history]);
-
   const handleSquareClick = (r: number, c: number) => {
     unlockAudio();
 
@@ -403,7 +398,6 @@ const App: React.FC = () => {
   const resetGame = (mode?: GameMode) => {
     unlockAudio();
     const targetMode = mode || gameState.gameMode;
-    // Fix: Persist Game Mode so it doesn't reset on reload
     if (typeof window !== 'undefined') {
       localStorage.setItem('chess.gameMode', targetMode);
     }
@@ -421,7 +415,7 @@ const App: React.FC = () => {
       gameOver: false,
       winner: null,
       statusMessage: targetMode === 'AI' ? 'Your Turn' : "White's Turn",
-      isAiThinking: false, // FORCE RESET to clear locks
+      isAiThinking: false,
       promotionPending: null,
       capturedByWhite: [],
       capturedByBlack: [],
@@ -438,7 +432,6 @@ const App: React.FC = () => {
       if(window.confirm(`Start a new ${newMode === 'AI' ? 'vs AI' : '2 Player'} game?`)) {
         resetGame(newMode);
       } else {
-        // Fix: Force re-render to reset select value if cancelled
         setGameState(prev => ({ ...prev }));
       }
     }
@@ -456,7 +449,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start sm:justify-center bg-[#262522] text-[#bababa] font-sans py-4">
+    <div className="h-[100dvh] w-full flex flex-col items-center justify-start bg-[#262522] text-[#bababa] font-sans overflow-hidden select-none">
       {notification && (
         <div className="fixed top-4 left-0 right-0 z-[100] flex justify-center animate-in slide-in-from-top duration-300 pointer-events-none">
            <div className="bg-[#baca44] text-[#262522] px-6 py-2 rounded-full font-bold shadow-lg shadow-black/50">
@@ -465,197 +458,176 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Top HUD (AI or Player 2) */}
-      <HUD 
-        name={gameState.gameMode === 'AI' ? `AI (Level ${difficulty})` : 'Player 2 (Black)'}
-        time={gameState.timers.black} 
-        isActive={gameState.turn === 'black'} 
-        status={gameState.gameMode === 'Human' && gameState.turn === 'black' ? gameState.statusMessage : undefined}
-        captured={gameState.capturedByBlack}
-        capturedColor="white"
-      />
-
-      <div className="relative my-2 shadow-2xl border-[6px] border-[#333] rounded-sm shrink-0 select-none">
-        <div 
-          className="grid grid-cols-8 grid-rows-8 w-[min(95vw,65vh)] h-[min(95vw,65vh)] transition-transform duration-500"
-          style={{ transform: isFlipped ? 'rotate(180deg)' : 'none' }}
-        >
-          {gameState.board.map((row, r) => 
-            row.map((piece, c) => {
-              const isDark = (r + c) % 2 === 1;
-              const isSelected = gameState.selected?.r === r && gameState.selected?.c === c;
-              const isLastMove = (gameState.lastMove?.from.r === r && gameState.lastMove?.from.c === c) ||
-                                 (gameState.lastMove?.to.r === r && gameState.lastMove?.to.c === c);
-              const isCaptureSquare = gameState.lastCapture?.r === r && gameState.lastCapture?.c === c;
-              const isValidTarget = !!gameState.selected && gameState.validMoves.some(m => m.r === r && m.c === c);
-
-              return (
-                <div key={`${r}-${c}`} style={{ transform: isFlipped ? 'rotate(180deg)' : 'none' }}>
-                  <Square
-                    r={r} c={c}
-                    piece={piece}
-                    isDark={isDark}
-                    isSelected={isSelected}
-                    isLastMove={isLastMove}
-                    isCaptureSquare={isCaptureSquare}
-                    isValidTarget={isValidTarget}
-                    capturedPiece={isCaptureSquare ? gameState.lastCapturedPiece : null}
-                    onClick={() => handleSquareClick(r, c)}
-                  />
-                </div>
-              );
-            })
-          )}
-        </div>
+      {/* Main content wrapper - limited width, flex column */}
+      <div className="flex flex-col w-full max-w-[min(95vw,65vh)] h-full p-2 gap-1">
         
-        {/* Promotion Modal */}
-        {gameState.promotionPending && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 rounded-sm backdrop-blur-sm transition-all duration-300">
-            <div className="bg-[#262522] p-6 rounded-lg shadow-2xl border border-[#444] animate-pop">
-              <h3 className="text-white text-center mb-4 font-bold text-lg uppercase tracking-wider">Promote to</h3>
-              <div className="flex gap-3">
-                {['q', 'r', 'b', 'n'].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => confirmPromotion(type as PieceType)}
-                    className="w-16 h-16 sm:w-20 sm:h-20 bg-[#3a3a3a] hover:bg-[#baca44] hover:text-[#262522] text-5xl flex items-center justify-center rounded-lg shadow-lg transform transition-all duration-200 hover:scale-110 active:scale-95 text-[#bababa] font-chess"
-                  >
-                    {PIECE_MAP[gameState.turn[0] + type]}
-                  </button>
-                ))}
+        {/* Top HUD */}
+        <HUD 
+          name={gameState.gameMode === 'AI' ? `AI (Level ${difficulty})` : 'Player 2 (Black)'}
+          time={gameState.timers.black} 
+          isActive={gameState.turn === 'black'} 
+          status={gameState.gameMode === 'Human' && gameState.turn === 'black' ? gameState.statusMessage : undefined}
+          captured={gameState.capturedByBlack}
+          capturedColor="white"
+        />
+
+        {/* Board - Shrinkable but preferred size */}
+        <div className="relative shrink-0 shadow-2xl border-[6px] border-[#333] rounded-sm mx-auto">
+          <div 
+            // Dynamic sizing: prefers 50vh, but respects width constraints
+            className="grid grid-cols-8 grid-rows-8 w-[min(95vw,50vh)] h-[min(95vw,50vh)] transition-transform duration-500"
+            style={{ transform: isFlipped ? 'rotate(180deg)' : 'none' }}
+          >
+            {gameState.board.map((row, r) => 
+              row.map((piece, c) => {
+                const isDark = (r + c) % 2 === 1;
+                const isSelected = gameState.selected?.r === r && gameState.selected?.c === c;
+                const isLastMove = (gameState.lastMove?.from.r === r && gameState.lastMove?.from.c === c) ||
+                                   (gameState.lastMove?.to.r === r && gameState.lastMove?.to.c === c);
+                const isCaptureSquare = gameState.lastCapture?.r === r && gameState.lastCapture?.c === c;
+                const isValidTarget = !!gameState.selected && gameState.validMoves.some(m => m.r === r && m.c === c);
+
+                return (
+                  <div key={`${r}-${c}`} style={{ transform: isFlipped ? 'rotate(180deg)' : 'none' }}>
+                    <Square
+                      r={r} c={c}
+                      piece={piece}
+                      isDark={isDark}
+                      isSelected={isSelected}
+                      isLastMove={isLastMove}
+                      isCaptureSquare={isCaptureSquare}
+                      isValidTarget={isValidTarget}
+                      capturedPiece={isCaptureSquare ? gameState.lastCapturedPiece : null}
+                      onClick={() => handleSquareClick(r, c)}
+                    />
+                  </div>
+                );
+              })
+            )}
+          </div>
+          
+          {/* Promotion Modal */}
+          {gameState.promotionPending && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 rounded-sm backdrop-blur-sm animate-pop">
+              <div className="bg-[#262522] p-4 rounded-lg shadow-xl border border-[#444]">
+                <h3 className="text-white text-center mb-2 font-bold text-sm uppercase">Promote</h3>
+                <div className="flex gap-2">
+                  {['q', 'r', 'b', 'n'].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => confirmPromotion(type as PieceType)}
+                      className="w-12 h-12 bg-[#3a3a3a] hover:bg-[#baca44] hover:text-[#262522] text-4xl flex items-center justify-center rounded shadow-lg font-chess transition-transform hover:scale-110 active:scale-95 text-[#bababa]"
+                    >
+                      {PIECE_MAP[gameState.turn[0] + type]}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {gameState.gameOver && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-500">
-            <div className={`
-              flex flex-col items-center p-8 rounded-xl shadow-2xl border-2 max-w-sm w-full mx-4 text-center
-              ${gameState.winner === 'white' ? 'bg-gradient-to-b from-[#769656] to-[#5a7642] border-[#baca44]' : 
-                gameState.winner === 'black' ? 'bg-gradient-to-b from-[#333] to-[#111] border-[#c0392b]' : 
-                'bg-gray-800 border-gray-600'}
-            `}>
-              <div className="text-6xl mb-4 drop-shadow-lg">{gameState.winner === 'white' ? '🏆' : gameState.winner === 'black' ? '🏆' : '🤝'}</div>
-              <h2 className="text-4xl font-black text-white mb-2 uppercase tracking-wide drop-shadow-md">{gameState.winner === 'draw' ? 'Draw' : 'Victory!'}</h2>
-              <p className="text-lg text-white/90 font-medium mb-8">{gameState.statusMessage}</p>
-              <button onClick={() => resetGame()} className={`
-                  px-8 py-3 rounded-lg font-bold text-lg shadow-lg transform transition-all hover:scale-105 active:scale-95
-                  ${gameState.winner === 'white' ? 'bg-white text-[#769656] hover:bg-gray-100' : 
-                    gameState.winner === 'black' ? 'bg-[#c0392b] text-white hover:bg-[#a93226]' : 
-                    'bg-gray-600 text-white hover:bg-gray-500'}
-                `}>New Game</button>
+          {/* Game Over Overlay */}
+          {gameState.gameOver && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-500">
+              <div className={`
+                flex flex-col items-center p-6 rounded-xl shadow-2xl border-2 max-w-[90%] text-center
+                ${gameState.winner === 'white' ? 'bg-gradient-to-b from-[#769656] to-[#5a7642] border-[#baca44]' : 
+                  gameState.winner === 'black' ? 'bg-gradient-to-b from-[#333] to-[#111] border-[#c0392b]' : 
+                  'bg-gray-800 border-gray-600'}
+              `}>
+                <div className="text-5xl mb-2 drop-shadow-lg">{gameState.winner === 'white' ? '🏆' : gameState.winner === 'black' ? '🏆' : '🤝'}</div>
+                <h2 className="text-3xl font-black text-white mb-1 uppercase drop-shadow-md">{gameState.winner === 'draw' ? 'Draw' : 'Victory!'}</h2>
+                <p className="text-base text-white/90 font-medium mb-6">{gameState.statusMessage}</p>
+                <button onClick={() => resetGame()} className="px-6 py-3 rounded-lg font-bold text-lg shadow-lg bg-white/20 hover:bg-white/30 active:bg-white/40 transition-colors text-white">New Game</button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom HUD (Player 1) */}
-      <HUD 
-        name={gameState.gameMode === 'AI' ? "You" : "Player 1 (White)"}
-        time={gameState.timers.white} 
-        isActive={gameState.turn === 'white'} 
-        status={(gameState.gameMode === 'AI' || gameState.turn === 'white' || gameState.gameOver) ? gameState.statusMessage : undefined}
-        captured={gameState.capturedByWhite}
-        capturedColor="black"
-      />
-
-      <div className="w-full max-w-[min(95vw,65vh)] mt-3 flex flex-col gap-2 px-2 sm:px-0 z-10 shrink-0">
-        
-        {/* Row 1: Main Actions */}
-        <div className="flex gap-2">
-          <button 
-            type="button"
-            onClick={undoMove}
-            disabled={gameState.history.length === 0 || gameState.isAiThinking}
-            className="flex-1 py-4 rounded-lg bg-[#3a3a3a] text-[#ccc] font-medium hover:bg-[#444] active:bg-[#555] disabled:opacity-50 disabled:cursor-not-allowed transition-all touch-manipulation shadow-md"
-          >
-            Undo
-          </button>
-          <button 
-            type="button"
-            onClick={() => { unlockAudio(); setIsFlipped(!isFlipped); }}
-            className="flex-1 py-4 rounded-lg bg-[#3a3a3a] text-[#ccc] font-medium hover:bg-[#444] active:bg-[#555] active:scale-95 transition-all touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-            disabled={gameState.gameOver}
-          >
-            Flip
-          </button>
-          <button 
-            type="button"
-            onClick={handleNewGameClick}
-            className="flex-1 py-4 rounded-lg bg-[#c0392b] text-white font-bold hover:bg-[#e74c3c] active:bg-[#c0392b] active:scale-95 transition-all touch-manipulation shadow-md"
-          >
-            New Game
-          </button>
+          )}
         </div>
 
-        {/* Row 2: Settings */}
-        <div className="flex gap-2">
-          {/* Game Mode Selector */}
-          <div className="relative flex-1 flex items-center bg-[#3a3a3a] rounded-lg px-3 py-2 shadow-sm">
-            <span className="text-gray-400 text-xs sm:text-sm font-bold uppercase tracking-wider mr-auto">Mode</span>
-            <span className="text-[#baca44] font-bold text-sm truncate mr-4">{gameState.gameMode === 'AI' ? 'vs AI' : '2 Player'}</span>
-            <svg className="w-4 h-4 text-gray-400 absolute right-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            <select value={gameState.gameMode} onChange={handleModeSwitch} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-20" aria-label="Game Mode">
-              <option value="AI">vs AI</option>
-              <option value="Human">2 Player</option>
-            </select>
+        {/* Bottom HUD */}
+        <HUD 
+          name={gameState.gameMode === 'AI' ? "You" : "Player 1 (White)"}
+          time={gameState.timers.white} 
+          isActive={gameState.turn === 'white'} 
+          status={(gameState.gameMode === 'AI' || gameState.turn === 'white' || gameState.gameOver) ? gameState.statusMessage : undefined}
+          captured={gameState.capturedByWhite}
+          capturedColor="black"
+        />
+
+        {/* Controls - Fixed Height */}
+        <div className="flex flex-col gap-2 w-full shrink-0">
+          <div className="flex gap-2 h-12">
+            <button 
+              onClick={undoMove}
+              disabled={gameState.history.length === 0 || gameState.isAiThinking}
+              className="flex-1 rounded-lg bg-[#3a3a3a] text-[#ccc] font-bold hover:bg-[#444] active:bg-[#555] disabled:opacity-50 disabled:transform-none transition-all active:scale-95 shadow-sm"
+            >
+              Undo
+            </button>
+            <button 
+              onClick={() => { unlockAudio(); setIsFlipped(!isFlipped); }}
+              className="flex-1 rounded-lg bg-[#3a3a3a] text-[#ccc] font-bold hover:bg-[#444] active:bg-[#555] transition-all active:scale-95 shadow-sm disabled:opacity-50"
+              disabled={gameState.gameOver}
+            >
+              Flip
+            </button>
+            <button 
+              onClick={handleNewGameClick}
+              className="flex-1 rounded-lg bg-[#c0392b] text-white font-bold hover:bg-[#e74c3c] active:bg-[#c0392b] transition-all active:scale-95 shadow-sm"
+            >
+              New
+            </button>
           </div>
 
-          {/* AI Strength (Only visible/active in AI mode) */}
-          {gameState.gameMode === 'AI' && (
-            <div className="relative flex-1 flex items-center bg-[#3a3a3a] rounded-lg px-3 py-2 animate-in fade-in duration-300 shadow-sm">
-              <span className="text-gray-400 text-xs sm:text-sm font-bold uppercase tracking-wider mr-auto">Level</span>
-              <span className="text-[#baca44] font-bold text-sm truncate mr-4">{difficulty === 1 ? 'Easy' : difficulty === 2 ? 'Med' : 'Hard'}</span>
+          <div className="flex gap-2 h-10">
+            <div className="relative flex-1 flex items-center bg-[#3a3a3a] rounded-lg px-3 shadow-sm">
+              <span className="text-gray-400 text-xs font-bold uppercase mr-auto">Mode</span>
+              <span className="text-[#baca44] font-bold text-xs truncate mr-4">{gameState.gameMode === 'AI' ? 'vs AI' : '2 Player'}</span>
               <svg className="w-4 h-4 text-gray-400 absolute right-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              <select value={difficulty} onChange={(e) => { unlockAudio(); handleDifficultyChange(Number(e.target.value)); }} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-20" aria-label="AI Difficulty">
+              <select value={gameState.gameMode} onChange={handleModeSwitch} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+                <option value="AI">vs AI</option>
+                <option value="Human">2 Player</option>
+              </select>
+            </div>
+
+            <div className={`relative flex-1 flex items-center bg-[#3a3a3a] rounded-lg px-3 shadow-sm ${gameState.gameMode !== 'AI' ? 'opacity-50 pointer-events-none' : ''}`}>
+              <span className="text-gray-400 text-xs font-bold uppercase mr-auto">Level</span>
+              <span className="text-[#baca44] font-bold text-xs truncate mr-4">{difficulty === 1 ? 'Easy' : difficulty === 2 ? 'Med' : 'Hard'}</span>
+              <svg className="w-4 h-4 text-gray-400 absolute right-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              <select value={difficulty} onChange={(e) => { unlockAudio(); handleDifficultyChange(Number(e.target.value)); }} className="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
                 <option value="1">Easy</option>
                 <option value="2">Medium</option>
                 <option value="3">Hard</option>
               </select>
             </div>
-          )}
+            
+            <button onClick={saveGame} className="flex-[0.5] rounded-lg bg-[#2a2a2a] text-[#bababa] text-xs font-medium border border-[#3a3a3a] hover:bg-[#3a3a3a] active:bg-[#444]">Save</button>
+            <button onClick={loadGame} className="flex-[0.5] rounded-lg bg-[#2a2a2a] text-[#bababa] text-xs font-medium border border-[#3a3a3a] hover:bg-[#3a3a3a] active:bg-[#444]">Load</button>
+          </div>
         </div>
 
-        {/* Row 3: Save / Load */}
-        <div className="flex gap-2">
-          <button 
-            type="button"
-            onClick={saveGame}
-            className="flex-1 py-2 rounded bg-[#2a2a2a] text-[#bababa] text-sm font-medium border border-[#3a3a3a] hover:bg-[#3a3a3a] active:bg-[#444] active:scale-95 hover:border-[#555] transition-all touch-manipulation shadow-sm"
-          >
-            Save Game
-          </button>
-          <button 
-            type="button"
-            onClick={loadGame}
-            className="flex-1 py-2 rounded bg-[#2a2a2a] text-[#bababa] text-sm font-medium border border-[#3a3a3a] hover:bg-[#3a3a3a] active:bg-[#444] active:scale-95 hover:border-[#555] transition-all touch-manipulation shadow-sm"
-          >
-            Load Game
-          </button>
+        {/* Move History - Flexible Height */}
+        <div className="flex-1 min-h-0 w-full p-2 bg-[#1a1a1a] rounded border border-[#333] shadow-inner flex flex-col mt-1">
+          <h3 className="text-[#baca44] font-bold text-xs uppercase tracking-wider mb-2 border-b border-[#333] pb-1 shrink-0">History</h3>
+          <div className="overflow-y-auto flex-1 min-h-0 scrollbar-thin scrollbar-thumb-gray-700 pr-1">
+             <div className="grid grid-cols-[2.5rem_1fr_1fr] gap-1 text-gray-500 font-bold text-[10px] uppercase sticky top-0 bg-[#1a1a1a] pb-1">
+                <div>#</div><div>White</div><div>Black</div>
+             </div>
+             {gameState.history.length === 0 && <div className="text-gray-600 italic text-center py-4 text-xs">No moves</div>}
+             {Array.from({ length: Math.ceil(gameState.history.length / 2) }).map((_, i) => {
+                const whiteMove = gameState.history[i * 2];
+                const blackMove = gameState.history[i * 2 + 1];
+                return (
+                  <div key={i} className="grid grid-cols-[2.5rem_1fr_1fr] gap-1 py-0.5 border-b border-[#333/30] last:border-0 hover:bg-white/5 text-xs">
+                    <div className="text-gray-600 font-mono">{i + 1}.</div>
+                    <div className="text-[#bababa] font-mono">{whiteMove.san}</div>
+                    <div className="text-[#bababa] font-mono">{blackMove ? blackMove.san : ''}</div>
+                  </div>
+                );
+             })}
+          </div>
         </div>
-      </div>
 
-      <div className="w-full max-w-[min(95vw,65vh)] mt-4 p-4 bg-[#1a1a1a] rounded border border-[#333] shadow-lg shrink-0">
-        <h3 className="text-[#baca44] font-bold text-sm uppercase tracking-wider mb-2 border-b border-[#333] pb-2">Move History</h3>
-        <div className="h-32 overflow-y-auto text-sm scrollbar-thin scrollbar-thumb-gray-700">
-           <div className="grid grid-cols-[3rem_1fr_1fr] gap-2 mb-2 text-gray-500 font-bold text-xs uppercase sticky top-0 bg-[#1a1a1a]">
-              <div>#</div><div>White</div><div>Black</div>
-           </div>
-           {gameState.history.length === 0 && <div className="text-gray-600 italic text-center py-4">No moves yet</div>}
-           {Array.from({ length: Math.ceil(gameState.history.length / 2) }).map((_, i) => {
-              const whiteMove = gameState.history[i * 2];
-              const blackMove = gameState.history[i * 2 + 1];
-              return (
-                <div key={i} className="grid grid-cols-[3rem_1fr_1fr] gap-2 py-1 border-b border-[#333/30] last:border-0 hover:bg-white/5">
-                  <div className="text-gray-600 font-mono">{i + 1}.</div>
-                  <div className="text-[#bababa] font-mono">{whiteMove.san}</div>
-                  <div className="text-[#bababa] font-mono">{blackMove ? blackMove.san : ''}</div>
-                </div>
-              );
-           })}
-           <div ref={historyEndRef} />
-        </div>
       </div>
     </div>
   );
